@@ -46,7 +46,7 @@ button:hover{border-color:var(--blue);color:var(--ink)}
 <body>
 <div class="app-shell">
 <header class="topbar">
-  <div class="brand"><div class="brand-mark">R</div><div><h1>RAG 知识图谱</h1><p>局部关系探索 · 59 个概念节点</p></div></div>
+  <div class="brand"><div class="brand-mark">R</div><div><h1>RAG 知识图谱</h1><p>局部关系探索 · 74 个概念节点</p></div></div>
   <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="search-input" type="search" placeholder="搜索节点、摘要或标签" aria-label="搜索节点、摘要或标签"></label><select id="type-filter" aria-label="节点类型过滤"><option value="all">全部类型</option><option value="module">核心概念</option><option value="risk">风险</option><option value="evaluation">评估</option><option value="research">深入研究</option></select><button id="expand-neighbors">展开邻居</button><button id="reset-view" class="primary">重置视图</button><button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换为深色主题">深色</button></div>
 </header>
 <div class="workspace"><aside class="tree-panel"><div class="panel-heading"><h2>知识树</h2><small id="tree-count"></small></div><div id="tree-scroll" class="tree-scroll"></div></aside>
@@ -73,10 +73,28 @@ const modules=[
 ]]]},
 {id:'rag-concept-evaluation',title:'RAG 评估',type:'evaluation',summary:'评估检索、生成、引用、延迟、成本和知识新鲜度。',tags:['Evaluation','质量'],body:'评估数据集应覆盖无答案、版本、数字、多实体、冲突来源、越权、多轮和长文档问题。',children:[['rag-evaluation-dataset','评估数据集','由真实问题、参考证据、参考答案和难例组成可重复测试集'],['rag-evaluation-metrics','检索与生成指标','检索关注 Recall@K、Precision、MRR，生成关注忠实度和引用正确性'],['rag-evaluation-online-monitoring','线上监控闭环','记录召回、答案、引用、延迟、成本和反馈，把失败样本回流回归集']]}
 ];
-const nodes=[{id:'rag',title:'RAG：检索增强生成',type:'root',parentId:null,summary:'外部知识检索增强大语言模型生成的完整系统方法。',tags:['RAG','根节点'],body:'RAG 由知识加工、检索、上下文编排、生成和评估组成。'}];
+const ontologyRoot={id:'palantir-ontology',title:'Palantir Ontology（帕兰提尔本体论）',type:'root',parentId:null,summary:'把真实世界对象、关系、属性和业务动作组织成可操作的语义层。',tags:['Palantir','Ontology','语义层'],body:'Ontology 连接数据资产、业务语义、权限和可执行动作，使分析结果能够进入运营工作流。'};
+const ontologyChildren=[
+  ['ontology-core-concepts','Ontology 概念与边界','定义对象、关系、属性和动作如何共同构成面向运营的语义层。'],
+  ['ontology-object-types','Object Types 对象类型','把真实实体或事件建模为可识别、可查询、可授权的对象类型。'],
+  ['ontology-properties','Properties 属性','描述对象特征、时间序列、地理信息和元数据，并映射到底层数据。'],
+  ['ontology-link-types','Link Types 关系类型','用具有业务含义的关系连接对象类型，表达上下游、归属和依赖。'],
+  ['ontology-interfaces','Interfaces 接口','抽取多个对象类型共享的属性、关系或动作，形成可复用的能力形状。'],
+  ['ontology-actions','Actions 动作','定义如何修改对象并把用户或系统决策连接到可审计的业务操作。'],
+  ['ontology-functions','Functions 函数','计算派生结果、更新对象、发送通知或调用外部 API，承接动作执行逻辑。'],
+  ['ontology-object-sets','对象集合与查询','按类型、关系、属性和权限组合对象集合，为应用和分析提供稳定查询边界。'],
+  ['ontology-data-integration','数据接入与对象映射','把数据集、虚拟表和外部系统映射到对象、属性与关系，并追踪来源。'],
+  ['ontology-semantic-layer','语义层与数字孪生','用统一语义描述现实世界实体、状态和事件，连接数据资产与运营上下文。'],
+  ['ontology-security-governance','安全与治理','对对象、属性、关系、动作和日志实施细粒度权限、标记、审计与变更治理。','risk'],
+  ['ontology-operational-workflows','运营工作流','把对象状态、动作、函数、通知和审批组合成可观测的业务闭环。'],
+  ['ontology-driven-apps','本体驱动应用','围绕对象和动作构建面向业务用户的应用、仪表盘和决策界面。'],
+  ['ontology-ai-agents','AI 与智能体集成','让 AI 和智能体在本体语义、权限、动作和审计约束下读取与执行。','research']
+];
+const nodes=[{id:'rag',title:'RAG：检索增强生成',type:'root',parentId:null,summary:'外部知识检索增强大语言模型生成的完整系统方法。',tags:['RAG','根节点'],body:'RAG 由知识加工、检索、上下文编排、生成和评估组成。'},ontologyRoot];
 function addNode(parentId,item){const [id,title,summary,type='detail',nested=[]]=item;nodes.push({id,title,type,parentId,summary,tags:[title],body:summary});for(const child of nested)addNode(id,child)}
-for(const module of modules){nodes.push({...module,parentId:'rag',children:undefined});for(const item of module.children)addNode(module.id,item)}
+for(const module of modules){nodes.push({...module,parentId:'rag',children:undefined});for(const item of module.children)addNode(module.id,item)}for(const item of ontologyChildren)addNode(ontologyRoot.id,item)
 const byId=new Map(nodes.map(node=>[node.id,node]));const children=new Map(nodes.map(node=>[node.id,[]]));nodes.forEach(node=>{if(node.parentId)children.get(node.parentId)?.push(node.id)});
+const rootIds=nodes.filter(node=>!node.parentId).map(node=>node.id);
 const related={
   'rag-concept-hallucination':['rag-concept-grounding','rag-concept-prompt','rag-concept-retriever','rag-concept-evaluation'],
   'rag-hallucination-deep-research':['rag-concept-grounding','rag-concept-evaluation'],
@@ -86,7 +104,9 @@ const related={
   'rag-prompt-evaluation-iteration':['rag-concept-evaluation','rag-concept-prompt'],
   'rag-prompt-long-context':['rag-concept-grounding','rag-concept-retriever'],
   'rag-prompt-injection-research':['rag-concept-hallucination','rag-concept-grounding'],
-  'rag-concept-evaluation':['rag-concept-hallucination','rag-concept-retriever']
+  'rag-concept-evaluation':['rag-concept-hallucination','rag-concept-retriever'],
+  'rag':['palantir-ontology'],
+  'palantir-ontology':['rag','rag-concept-llm','rag-concept-prompt','rag-concept-grounding'],
 };
 const edgeList=[];nodes.forEach(node=>{if(node.parentId)edgeList.push({from:node.parentId,to:node.id,kind:node.type==='research'?'research':'parent'})});Object.entries(related).forEach(([from,targets])=>targets.forEach(to=>edgeList.push({from,to,kind:'related'})));
 const state={selectedId:'rag-concept-hallucination',expandedIds:new Set(['rag','rag-concept-hallucination']),query:'',filter:'all',neighborDepth:1,zoom:1};
@@ -100,7 +120,7 @@ function filterAllows(node){return state.filter==='all'||node.type===state.filte
 function visibleTree(id){const node=byId.get(id);if(!node)return false;const own=matches(node)&&filterAllows(node);return own||children.get(id).some(childId=>visibleTree(childId))}
 function autoExpand(){if(state.query){nodes.filter(matches).forEach(node=>pathOf(node.id).forEach(id=>state.expandedIds.add(id)))}state.expandedIds.add('rag')}
 function renderTreeNode(id,level=0){const node=byId.get(id);if(!visibleTree(id))return '';const kids=children.get(id)||[];const open=state.expandedIds.has(id);const active=state.selectedId===id;const muted=state.query&&!matches(node)&&!kids.some(childId=>matches(byId.get(childId)));const match=state.query&&matches(node);let html=`<div class="tree-row ${active?'active ':''}${muted?'muted ':''}${match?'match':''}" style="padding-left:${8+level*15}px"><button class="tree-toggle" data-toggle-id="${esc(id)}" aria-label="${open?'收起':'展开'} ${esc(node.title)}">${kids.length?(open?'▾':'▸'):''}</button><button class="tree-node" data-select-id="${esc(id)}"><i class="type-dot ${esc(node.type)}"></i><span>${esc(node.title)}</span>${kids.length?`<small class="tree-count">${kids.length}</small>`:''}</button></div>`;if(open)html+=kids.map(childId=>renderTreeNode(childId,level+1)).join('');return html}
-function renderTree(){autoExpand();treeScroll.innerHTML=renderTreeNode('rag');treeCount.textContent=`${nodes.length} 节点`;treeScroll.querySelectorAll('[data-select-id]').forEach(btn=>btn.addEventListener('click',()=>selectNode(btn.dataset.selectId)));treeScroll.querySelectorAll('[data-toggle-id]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();const id=btn.dataset.toggleId;if(state.expandedIds.has(id))state.expandedIds.delete(id);else state.expandedIds.add(id);renderTree()}))}
+function renderTree(){autoExpand();treeScroll.innerHTML=rootIds.map(id=>renderTreeNode(id)).join('');treeCount.textContent=`${nodes.length} 节点`;treeScroll.querySelectorAll('[data-select-id]').forEach(btn=>btn.addEventListener('click',()=>selectNode(btn.dataset.selectId)));treeScroll.querySelectorAll('[data-toggle-id]').forEach(btn=>btn.addEventListener('click',event=>{event.stopPropagation();const id=btn.dataset.toggleId;if(state.expandedIds.has(id))state.expandedIds.delete(id);else state.expandedIds.add(id);renderTree()}))}
 function visibleNeighborhood(){const selected=state.selectedId;const distance=new Map([[selected,0]]);const queue=[selected];while(queue.length){const current=queue.shift();const d=distance.get(current);if(d>=state.neighborDepth)continue;edgeList.forEach(edge=>{let next=null;if(edge.from===current)next=edge.to;if(edge.to===current)next=edge.from;if(next&&!distance.has(next)){distance.set(next,d+1);queue.push(next)}})}pathOf(selected).forEach(id=>distance.set(id,Math.min(distance.get(id)??99,state.neighborDepth+1)));return nodes.filter(node=>distance.has(node.id)).slice(0,30)}
 function graphLayout(drawNodes){const maxDepth=Math.max(...drawNodes.map(depthOf),1);const groups=new Map();drawNodes.forEach(node=>{const d=depthOf(node);if(!groups.has(d))groups.set(d,[]);groups.get(d).push(node)});const positions=new Map();groups.forEach((group,d)=>group.sort((a,b)=>{const pa=pathOf(a.id).join('/'),pb=pathOf(b.id).join('/');return pa.localeCompare(pb)}).forEach((node,index)=>positions.set(node.id,{x:90+d*190,y:95+index*94})));return {positions,width:Math.max(850,(maxDepth+1)*190+170),height:Math.max(540,Math.max(...[...positions.values()].map(pos=>pos.y),480)+100)}}
 function nodeLabel(title){return title.length>18?`${title.slice(0,17)}…`:title}
