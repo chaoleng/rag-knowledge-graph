@@ -90,9 +90,97 @@ const ontologyChildren=[
   ['ontology-driven-apps','本体驱动应用','围绕对象和动作构建面向业务用户的应用、仪表盘和决策界面。'],
   ['ontology-ai-agents','AI 与智能体集成','让 AI 和智能体在本体语义、权限、动作和审计约束下读取与执行。','research']
 ];
+const ontologyDetails={
+  'ontology-core-concepts':{tags:['语义层','对象','属性','关系','动作'],sections:[
+    {label:'定义',text:'说明对象、属性、关系和动作如何共同形成面向运营的语义层，并明确它不是单纯的数据库表目录。'},
+    {label:'核心要素',text:'对象类型表达实体或事件，属性描述状态，关系连接业务上下文，动作和函数把决策转化为可审计的操作。'},
+    {label:'典型例子',text:'以设备为对象，关联位置、维护记录和告警，再通过动作创建维护工单。'},
+    {label:'落地提示',text:'先定义稳定的业务语义和责任边界，再映射数据源；不要把一次性报表字段直接当成长期对象模型。'}
+  ]},
+  'ontology-object-types':{tags:['Object Types','对象建模','实体','事件','生命周期'],sections:[
+    {label:'定义',text:'把真实实体或事件建模为可识别、可查询、可授权的业务对象类型。'},
+    {label:'核心要素',text:'稳定标识、业务属性、关系、生命周期、访问策略和数据来源共同决定对象类型的可用性。'},
+    {label:'典型例子',text:'将设备建模为对象类型，连接位置、维护记录、告警和负责人。'},
+    {label:'落地提示',text:'先确定稳定的业务标识，再设计属性和关系；不要把临时分析字段直接固化为核心对象模型。'}
+  ]},
+  'ontology-properties':{tags:['Properties','属性','时间序列','地理信息','派生属性'],sections:[
+    {label:'定义',text:'用属性描述对象的特征、状态、时间序列、地理信息和元数据，并保留与来源数据的映射关系。'},
+    {label:'核心要素',text:'属性类型、来源字段、更新时间、质量状态、是否派生以及读取和修改权限。'},
+    {label:'典型例子',text:'设备对象同时拥有型号、当前位置、温度时间序列和最近维护时间。'},
+    {label:'落地提示',text:'区分源数据、计算属性和人工修正值；对时间敏感属性明确新鲜度和缺失值语义。'}
+  ]},
+  'ontology-link-types':{tags:['Link Types','关系类型','基数','遍历','依赖'],sections:[
+    {label:'定义',text:'用具有业务含义的关系连接对象类型，表达归属、上下游、依赖和事件关联。'},
+    {label:'核心要素',text:'关系方向、基数、目标类型、有效期、遍历方式、来源和关系级权限。'},
+    {label:'典型例子',text:'设备属于工厂、设备产生告警、维护工单服务设备，这些关系共同表达运营上下文。'},
+    {label:'落地提示',text:'关系应回答明确的业务问题；控制高扇出遍历和重复关系，必要时记录生效时间与来源。'}
+  ]},
+  'ontology-interfaces':{tags:['Interfaces','接口','共享能力','复用','兼容性'],sections:[
+    {label:'定义',text:'抽取多个对象类型共享的属性、关系或动作，形成可复用的能力形状。'},
+    {label:'核心要素',text:'共享字段、共享关系、共享动作、实现对象类型和接口变更兼容规则。'},
+    {label:'典型例子',text:'设备和车辆都实现可维护接口，因此都能提供维护状态、维护记录关系和提交维护动作。'},
+    {label:'落地提示',text:'接口描述稳定能力而不是临时字段集合；变更共享接口前要评估所有实现对象和应用。'}
+  ]},
+  'ontology-actions':{tags:['Actions','动作','写回','授权','审计','幂等'],sections:[
+    {label:'定义',text:'定义如何修改对象或触发业务流程，把用户或系统决策连接到可审计的业务操作。'},
+    {label:'核心要素',text:'输入参数、前置校验、授权、状态变化、副作用、错误处理、幂等键和审计记录。'},
+    {label:'典型例子',text:'用户批准维护工单后，动作更新工单状态、安排负责人并记录批准人和时间。'},
+    {label:'落地提示',text:'把动作设计成明确的业务意图；对重复提交、部分失败和越权调用定义可观察结果。'}
+  ]},
+  'ontology-functions':{tags:['Functions','函数','派生计算','异步','外部 API'],sections:[
+    {label:'定义',text:'承接派生计算、对象更新、通知发送或外部系统调用的执行逻辑。'},
+    {label:'核心要素',text:'输入输出、执行时机、纯计算或副作用、超时重试、权限、日志和失败补偿。'},
+    {label:'典型例子',text:'函数根据设备温度和历史趋势计算风险等级，再供告警动作和运营应用使用。'},
+    {label:'落地提示',text:'区分可重复的纯计算与有副作用的外部调用；为异步函数设计状态、超时和重试边界。'}
+  ]},
+  'ontology-object-sets':{tags:['对象集合','查询','过滤','关系遍历','权限边界'],sections:[
+    {label:'定义',text:'按类型、关系、属性和权限组合对象集合，为应用和分析提供稳定的查询边界。'},
+    {label:'核心要素',text:'筛选条件、关系遍历、排序分页、权限裁剪、快照时点和查询性能。'},
+    {label:'典型例子',text:'查询当前工厂中处于高风险状态且过去七天未维护的设备集合。'},
+    {label:'落地提示',text:'先限定对象范围再扩展关系；避免无界遍历，并确保查询结果始终服从对象和属性权限。'}
+  ]},
+  'ontology-data-integration':{tags:['数据接入','对象映射','数据集','虚拟表','血缘','数据质量'],sections:[
+    {label:'定义',text:'把数据集、虚拟表和外部系统映射到对象、属性与关系，并追踪数据来源和同步状态。'},
+    {label:'核心要素',text:'主键匹配、字段映射、增量同步、冲突处理、血缘、质量校验和失败重跑。'},
+    {label:'典型例子',text:'把 ERP 设备主数据、IoT 温度流和工单系统映射到同一设备对象及其关系。'},
+    {label:'落地提示',text:'先解决统一标识和主数据责任，再处理字段映射；同步延迟和脏数据必须在应用中可见。'}
+  ]},
+  'ontology-semantic-layer':{tags:['语义层','数字孪生','现实实体','状态','事件','新鲜度'],sections:[
+    {label:'定义',text:'用统一语义描述现实世界实体、状态和事件，把数据资产连接到运营上下文。'},
+    {label:'核心要素',text:'现实实体标识、当前状态、历史事件、时间语义、数据来源和新鲜度。'},
+    {label:'典型例子',text:'设备对象同时呈现实时状态、历史告警、维护计划和所属工厂，形成可操作的数字表示。'},
+    {label:'落地提示',text:'明确当前状态与历史事件的区别；为延迟、过期和来源冲突定义可解释的处理规则。'}
+  ]},
+  'ontology-security-governance':{tags:['安全','治理','权限','标记','审计','最小权限'],sections:[
+    {label:'定义',text:'对对象、属性、关系、动作和日志实施细粒度权限、标记、审计与变更治理。'},
+    {label:'核心要素',text:'身份、角色、对象范围、属性限制、动作授权、数据标记、审计事件和审批流程。'},
+    {label:'典型例子',text:'维护团队可以查看负责区域设备并提交维护动作，但不能读取其他区域的敏感成本属性。'},
+    {label:'落地提示',text:'默认采用最小权限；同时验证读权限和写动作权限，定期检查权限漂移与审计完整性。'}
+  ]},
+  'ontology-operational-workflows':{tags:['运营工作流','状态机','触发器','审批','通知','可观测性'],sections:[
+    {label:'定义',text:'把对象状态、动作、函数、通知和审批组合成可观测的业务闭环。'},
+    {label:'核心要素',text:'状态模型、触发条件、人工审批、自动动作、超时、异常路径和流程指标。'},
+    {label:'典型例子',text:'告警触发检查函数，确认风险后创建工单，经主管批准后安排维护并关闭告警。'},
+    {label:'落地提示',text:'显式建模等待、拒绝和失败状态；为每个自动动作保留负责人、原因和可追踪日志。'}
+  ]},
+  'ontology-driven-apps':{tags:['本体驱动应用','对象视图','动作表单','仪表盘','写回'],sections:[
+    {label:'定义',text:'围绕对象和动作构建面向业务用户的应用、仪表盘和决策界面。'},
+    {label:'核心要素',text:'对象详情、关系导航、筛选视图、动作表单、权限裁剪、写回反馈和任务上下文。'},
+    {label:'典型例子',text:'运营人员从工厂视图进入设备详情，查看告警和维护历史后直接提交延期维护动作。'},
+    {label:'落地提示',text:'围绕业务任务而不是数据表组织页面；动作成功、失败和权限不足都要给出明确反馈。'}
+  ]},
+  'ontology-ai-agents':{tags:['AI','智能体','grounding','工具调用','权限','审计','评估'],sections:[
+    {label:'定义',text:'让 AI 和智能体在本体语义、权限、动作和审计约束下读取信息并执行受控操作。'},
+    {label:'核心要素',text:'语义 grounding、对象查询、工具或动作调用、用户授权、人工确认、审计和结果评估。'},
+    {label:'典型例子',text:'智能体根据设备对象、告警和维护规则总结风险，并在用户确认后提交维护动作。'},
+    {label:'落地提示',text:'先限制可读对象和可执行动作；高影响写操作需要确认、幂等和完整审计，不能只依赖模型文本。'}
+  ]}
+};
+ 
 const nodes=[{id:'rag',title:'RAG：检索增强生成',type:'root',parentId:null,summary:'外部知识检索增强大语言模型生成的完整系统方法。',tags:['RAG','根节点'],body:'RAG 由知识加工、检索、上下文编排、生成和评估组成。'},ontologyRoot];
 function addNode(parentId,item){const [id,title,summary,type='detail',nested=[]]=item;nodes.push({id,title,type,parentId,summary,tags:[title],body:summary});for(const child of nested)addNode(id,child)}
 for(const module of modules){nodes.push({...module,parentId:'rag',children:undefined});for(const item of module.children)addNode(module.id,item)}for(const item of ontologyChildren)addNode(ontologyRoot.id,item)
+for(const node of nodes){const detail=ontologyDetails[node.id];if(detail){node.tags=[...new Set([...node.tags,...detail.tags])];node.sections=detail.sections}}
 const byId=new Map(nodes.map(node=>[node.id,node]));const children=new Map(nodes.map(node=>[node.id,[]]));nodes.forEach(node=>{if(node.parentId)children.get(node.parentId)?.push(node.id)});
 const rootIds=nodes.filter(node=>!node.parentId).map(node=>node.id);
 const related={
