@@ -46,7 +46,7 @@ button:hover{border-color:var(--blue);color:var(--ink)}
 <body>
 <div class="app-shell">
 <header class="topbar">
-  <div class="brand"><div class="brand-mark">R</div><div><h1>RAG 知识图谱</h1><p>局部关系探索 · 50 个概念节点</p></div></div>
+  <div class="brand"><div class="brand-mark">R</div><div><h1>RAG 知识图谱</h1><p>局部关系探索 · 59 个概念节点</p></div></div>
   <div class="toolbar"><label class="search-wrap"><span>⌕</span><input id="search-input" type="search" placeholder="搜索节点、摘要或标签" aria-label="搜索节点、摘要或标签"></label><select id="type-filter" aria-label="节点类型过滤"><option value="all">全部类型</option><option value="module">核心概念</option><option value="risk">风险</option><option value="evaluation">评估</option><option value="research">深入研究</option></select><button id="expand-neighbors">展开邻居</button><button id="reset-view" class="primary">重置视图</button><button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换为深色主题">深色</button></div>
 </header>
 <div class="workspace"><aside class="tree-panel"><div class="panel-heading"><h2>知识树</h2><small id="tree-count"></small></div><div id="tree-scroll" class="tree-scroll"></div></aside>
@@ -63,7 +63,7 @@ const modules=[
 {id:'rag-concept-chunking',title:'文档切分（Chunking）',type:'module',summary:'把长文档拆成适合检索的知识片段。',tags:['Chunking','预处理'],body:'切分大小、重叠比例和父子片段关系决定检索精度与上下文完整性。',children:[['rag-chunking-strategies','切分策略','固定长度、递归、按标题、语义和父子文档都是常见策略。'],['rag-chunking-overlap','重叠与连续性','重叠避免论证被切断，但过大会造成重复召回和索引膨胀。'],['rag-chunking-parent-child','父子片段检索','小片段精准召回，父章节补充背景，两者保留稳定定位。']]},
 {id:'rag-concept-retriever',title:'检索器（Retriever）',type:'module',summary:'根据查询从知识库召回候选片段。',tags:['Retriever','检索'],body:'关键词、向量、元数据和混合检索分别处理不同问题，召回质量需要独立评估。',children:[['rag-retriever-lexical-vector','关键词与向量','BM25 擅长错误码和术语，向量检索擅长自然语言和同义表达。'],['rag-retriever-hybrid','混合检索','通过分数归一化、排名融合或 RRF 组合多路结果。'],['rag-retriever-recall-metrics','召回质量指标','Recall@K、Precision@K 和 MRR 区分召回和排序问题。']]},
 {id:'rag-concept-reranker',title:'重排序器（Reranker）',type:'module',summary:'对初步召回的候选片段重新计算相关性。',tags:['Reranker','排序'],body:'Cross-Encoder 通常更精确但更慢，适合对有限候选集进行第二阶段排序。',children:[['rag-reranker-cross-encoder','Cross-Encoder','同时读取查询和候选片段，直接判断相关性。'],['rag-reranker-top-k-latency','Top-K 与延迟','扩大召回、限制重排输入、最后保留互补证据。'],['rag-reranker-evaluation','重排评估','比较正确证据排名、忠实度、延迟和成本的整体变化。']]},
-{id:'rag-concept-prompt',title:'Prompt',type:'module',summary:'约束模型角色、证据使用方式和输出格式。',tags:['Prompt','控制'],body:'模板应明确证据区块、未知处理、引用要求和输出格式，同时防范外部文档注入。',children:[['rag-prompt-template','模板结构','将角色规则、用户问题、检索证据、引用要求和格式分成区块。'],['rag-prompt-context-assembly','上下文组装','按相关性、可信度、时间和互补性排列证据。'],['rag-prompt-injection-defense','注入防护','把外部文档当作数据而非指令，并限制工具调用和敏感输出。']]},
+{id:'rag-concept-prompt',title:'Prompt',type:'module',summary:'约束模型角色、证据使用方式和输出格式。',tags:['Prompt','控制'],body:'模板应明确证据区块、未知处理、引用要求和输出格式，同时防范外部文档注入。',children:[['rag-prompt-template','模板结构','将角色规则、用户问题、检索证据、引用要求和格式分成区块。'],['rag-prompt-context-assembly','上下文组装','按相关性、可信度、时间和互补性排列证据。'],['rag-prompt-injection-defense','注入防护','把外部文档当作数据而非指令，并限制工具调用和敏感输出。'],['rag-prompt-role-task','角色与任务定义','明确模型角色、任务目标、受众和完成标准，减少泛化回答。'],['rag-prompt-constraints','约束条件设计','用范围、语言、禁止行为和边界条件把可接受结果写清楚。'],['rag-prompt-few-shot','Few-shot 示例','用有代表性的正例、反例和边界例说明输入到输出的映射。'],['rag-prompt-structured-output','结构化输出','用 Schema、字段约束和校验规则让结果可解析、可验证、可重试。'],['rag-prompt-decomposition','任务分解与推理','把复杂目标拆成步骤和检查点，再汇总为符合输出契约的结果。'],['rag-prompt-evaluation-iteration','提示词评估与迭代','用代表性测试集、质量指标和回归样本比较提示词版本。','evaluation'],['rag-prompt-long-context','长上下文提示','对长材料去重、分段、排序和压缩，并保留证据定位。','research'],['rag-prompt-tool-use','工具调用提示','明确工具前置条件、参数、权限、错误处理和无工具回退路径。'],['rag-prompt-injection-research','Prompt Injection 防御深入研究','隔离外部数据与指令，限制权限边界，并用攻击样本和审计验证防护。','research']]},
 {id:'rag-concept-grounding',title:'Grounding',type:'module',summary:'让答案中的关键结论能够回溯到检索证据和原始来源。',tags:['Grounding','验证'],body:'引用应具体到文档、章节、URL 或片段位置；回答必须区分事实、推断和未知。',children:[['rag-grounding-citation','引用与定位','把结论连接到文档、章节、URL 或片段位置。'],['rag-grounding-faithfulness','答案忠实度','判断答案是否被检索证据支持，而不是只看语言是否流畅。'],['rag-grounding-conflict','证据冲突','按版本、时间、权威等级和适用范围处理冲突来源。']]},
 {id:'rag-concept-hallucination',title:'幻觉（Hallucination）',type:'risk',summary:'模型生成缺乏依据、与证据冲突或过度推断的内容。',tags:['幻觉','风险'],body:'幻觉不是单一的模型错误，而是数据、检索、上下文、生成、引用和验证共同作用的系统性问题。',children:[['rag-hallucination-types','幻觉类型','包括无依据编造、引用错配、数字错误、实体混淆和过度推断','risk'],['rag-hallucination-causes','幻觉成因','知识缺失、召回错误、证据冲突、上下文过载和模型过度推断','risk'],['rag-hallucination-mitigation','幻觉缓解','知识更新、混合检索、证据约束、引用检查和明确拒答','risk'],['rag-hallucination-deep-research','幻觉深入研究','区分 Factuality 与 Faithfulness，沿完整链路诊断、评估和缓解幻觉','research',[
 ['rag-hallucination-research-factuality','事实正确性与证据忠实度','区分 Factuality 与 Faithfulness，避免把碰巧正确当成可靠回答','research'],
@@ -82,7 +82,10 @@ const related={
   'rag-hallucination-deep-research':['rag-concept-grounding','rag-concept-evaluation'],
   'rag-concept-grounding':['rag-concept-hallucination','rag-concept-evaluation'],
   'rag-concept-retriever':['rag-concept-embedding','rag-concept-reranker'],
-  'rag-concept-prompt':['rag-concept-llm','rag-concept-grounding'],
+  'rag-concept-prompt':['rag-concept-llm','rag-concept-grounding','rag-concept-hallucination','rag-concept-evaluation'],
+  'rag-prompt-evaluation-iteration':['rag-concept-evaluation','rag-concept-prompt'],
+  'rag-prompt-long-context':['rag-concept-grounding','rag-concept-retriever'],
+  'rag-prompt-injection-research':['rag-concept-hallucination','rag-concept-grounding'],
   'rag-concept-evaluation':['rag-concept-hallucination','rag-concept-retriever']
 };
 const edgeList=[];nodes.forEach(node=>{if(node.parentId)edgeList.push({from:node.parentId,to:node.id,kind:node.type==='research'?'research':'parent'})});Object.entries(related).forEach(([from,targets])=>targets.forEach(to=>edgeList.push({from,to,kind:'related'})));
