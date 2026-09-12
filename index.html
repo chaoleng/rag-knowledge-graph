@@ -176,11 +176,86 @@ const ontologyDetails={
     {label:'落地提示',text:'先限制可读对象和可执行动作；高影响写操作需要确认、幂等和完整审计，不能只依赖模型文本。'}
   ]}
 };
+const harnessRoot={id:'agent-harness',title:'Agent Harness 工具',type:'root',parentId:null,summary:'编码 Agent 运行时可调用的工具原语集合及其契约。',tags:['Harness','工具','Agent'],body:'Harness 暴露读取、变更、命令执行、代码智能、编排、UI 驱动、外部信息和过程管理八类原语；Skill 与质量门在原语层之上编排。'};
+const harnessChildren=[
+  ['harness-overview','概念与边界','区分 harness 原语层与在其之上编排的 Skill 与质量门层。'],
+  ['harness-read','读取与检索','read、glob、grep 只读获取内容、结构摘要和匹配结果。'],
+  ['harness-mutate','变更','edit、write、ast_edit 修改文件，采用提案到应用的两段式提交。'],
+  ['harness-exec','命令执行','bash、eval 执行命令，收敛为带 cwd、env、timeout 的 CommandSpec。','risk'],
+  ['harness-code-intel','代码智能','LSP 与调试器提供跨文件导航、重命名和结构化诊断。'],
+  ['harness-orchestration','编排与委派','task 派生子 Agent，hub 负责消息、后台作业和进程管理。'],
+  ['harness-ui','交互式 UI 驱动','browser 通过可访问性快照和操作驱动真实浏览器并留证。'],
+  ['harness-external','外部信息','web_search 与 MCP 资源，出站需脱敏并记入外部送信日志。'],
+  ['harness-process','过程管理','todo 是 Agent 内部记忆，不进入状态真相源。'],
+  ['harness-patterns','横切设计模式','意图字段、URI 寻址、两段提交、乐观锁、超时和白名单等共性模式。','research']
+];
+const harnessDetails={
+  'harness-overview':{tags:['原语','Skill','分层','边界'],sections:[
+    {label:'定义',text:'Harness 工具是 Agent 运行时可直接调用的工具原语；Skill 与质量门是在原语层之上编排出的确定性检查层。'},
+    {label:'核心要素',text:'八类原语中，命令执行、变更、UI 驱动和外部信息四类有真实副作用，是安全边界重点收口的对象。'},
+    {label:'典型例子',text:'Brownfield 只读扫描用 glob 加 grep 定位证据，Skill 再通过命令执行原语调用 eslint、pytest 判定质量门。'},
+    {label:'落地提示',text:'用显式 ToolCapability 清单固化 Agent 可见原语，避免各阶段各自发明读文件、改文件的方式。'}
+  ]},
+  'harness-read':{tags:['read','glob','grep','只读','证据切片'],sections:[
+    {label:'定义',text:'只读获取文件、目录、归档、URL 内容，以及按模式匹配的检索结果。'},
+    {label:'核心要素',text:'行选择器切片、源码结构摘要优先、正则跨行与分页、gitignore 感知。'},
+    {label:'典型例子',text:'用行范围只取证据片段，只登记路径、行范围和 hash，而不是把整文件塞进状态。'},
+    {label:'落地提示',text:'把结构摘要优先用于 Brownfield 扫描：先给声明骨架，需要时再拉正文以节省上下文。'}
+  ]},
+  'harness-mutate':{tags:['edit','write','ast_edit','两段提交','乐观锁'],sections:[
+    {label:'定义',text:'修改文件的原语，包含行锚定补丁、整文件覆盖和 AST 结构化 codemod。'},
+    {label:'核心要素',text:'快照指纹陈旧即拒绝的乐观锁；匹配先 staged 成提案，resolve 应用、reject 丢弃。'},
+    {label:'典型例子',text:'ast_edit 的 staged 到 resolve 或 reject，对应流水线 attempt 临时目录到 manifest 校验再到 committed 或 abandoned。'},
+    {label:'落地提示',text:'变更只写 attempt 临时目录，经 manifest 校验后提交；恢复前用内容指纹校验一致才写。'}
+  ]},
+  'harness-exec':{tags:['bash','eval','CommandSpec','沙箱','超时'],sections:[
+    {label:'定义',text:'执行外部命令或代码的原语，是副作用和安全边界的重点。'},
+    {label:'核心要素',text:'argv 数组、固定 cwd、环境变量白名单、timeout、网络权限；输出超阈值溢出到 artifact。'},
+    {label:'典型例子',text:'Skill 不裸拼 shell，只通过版本化 CommandSpec 调用白名单二进制。'},
+    {label:'落地提示',text:'裸 stdout 先入受控日志并做 secret scan，再 URI 化为 evidence，绝不进错误消息或外部送信。'}
+  ]},
+  'harness-code-intel':{tags:['LSP','debug','诊断','引用','重构'],sections:[
+    {label:'定义',text:'语言服务器与调试器提供的符号级代码智能。'},
+    {label:'核心要素',text:'定义、引用、类型、重命名的跨文件感知，全工作区诊断，断点单步与栈帧检查。'},
+    {label:'典型例子',text:'改公共契约前用 references 列出全部调用点，作为公共 API 变更承認的证据。'},
+    {label:'落地提示',text:'LSP 诊断可作语言无关的质量门兜底，填补未知栈没有 CLI 时直接转人工的空档。'}
+  ]},
+  'harness-orchestration':{tags:['task','hub','子 Agent','并发','消息'],sections:[
+    {label:'定义',text:'派生子 Agent，以及 Agent 间协调、后台作业和长驻进程管理的原语。'},
+    {label:'核心要素',text:'一批任务并发且有上限；子 Agent 无历史需自包含；通过消息而非共享状态协调。'},
+    {label:'典型例子',text:'Orchestrator 派发 Stage Agent 并串行提交状态，仅明确允许的分支并行。'},
+    {label:'落地提示',text:'子 Agent 不得直接写状态真相源；StageContext 必须自包含，不假设隐式上下文。'}
+  ]},
+  'harness-ui':{tags:['browser','Playwright','ARIA','截图','trace'],sections:[
+    {label:'定义',text:'通过浏览器自动化驱动真实 UI 并采集证据的原语。'},
+    {label:'核心要素',text:'导航、点击、输入、表单；截图与可回放 trace；控制台报错抓取；可访问性快照。'},
+    {label:'典型例子',text:'E2E 用截图和 trace 留证，截图按步骤描述而非流水号命名。'},
+    {label:'落地提示',text:'优先用 ARIA 快照定位元素而非坐标点击，其结构还可作无障碍质量门证据。'}
+  ]},
+  'harness-external':{tags:['web_search','MCP','出站','脱敏','审计'],sections:[
+    {label:'定义',text:'获取外部信息的原语，包含网络搜索与 MCP 资源访问。'},
+    {label:'核心要素',text:'出站策略、脱敏令牌化、敏感度分级、外部送信日志。'},
+    {label:'典型例子',text:'携带客户敏感上下文的阶段默认关闭搜索，或只允许不含客户数据的技术查询。'},
+    {label:'落地提示',text:'每次出站记入 outbound_logs，包含 provider、model、脱敏摘要 hash 和 decision。'}
+  ]},
+  'harness-process':{tags:['todo','内部记忆','计划','非真相源'],sections:[
+    {label:'定义',text:'Agent 内部的任务清单与过程记忆原语。'},
+    {label:'核心要素',text:'纯 Agent 内部记忆，明确不进入状态真相源。'},
+    {label:'典型例子',text:'中间计划和自省不写数据库，只有结构化结果、manifest、审批和事件才是真相。'},
+    {label:'落地提示',text:'守住原语边界，避免用内部记忆污染审计与恢复。'}
+  ]},
+  'harness-patterns':{tags:['意图字段','URI 寻址','两段提交','乐观锁','白名单','超时'],sections:[
+    {label:'定义',text:'贯穿所有工具的横切设计模式，可直接映射到流水线契约。'},
+    {label:'核心要素',text:'结构化意图字段、内部 URI 寻址、两段式提案提交、乐观锁指纹、输出溢出到 artifact、后台加超时、专用工具优先、能力白名单即上下文。'},
+    {label:'典型例子',text:'大产物一律 URI 化，不进对话或状态，只留 hash 和摘要。'},
+    {label:'落地提示',text:'用这八条模式收敛 ToolResult、CommandSpec、evidence_uri 和 allowed_tools 的设计。'}
+  ]}
+};
  
-const nodes=[{id:'rag',title:'RAG：检索增强生成',type:'root',parentId:null,summary:'外部知识检索增强大语言模型生成的完整系统方法。',tags:['RAG','根节点'],body:'RAG 由知识加工、检索、上下文编排、生成和评估组成。'},ontologyRoot];
+const nodes=[{id:'rag',title:'RAG：检索增强生成',type:'root',parentId:null,summary:'外部知识检索增强大语言模型生成的完整系统方法。',tags:['RAG','根节点'],body:'RAG 由知识加工、检索、上下文编排、生成和评估组成。'},ontologyRoot,harnessRoot];
 function addNode(parentId,item){const [id,title,summary,type='detail',nested=[]]=item;nodes.push({id,title,type,parentId,summary,tags:[title],body:summary});for(const child of nested)addNode(id,child)}
-for(const module of modules){nodes.push({...module,parentId:'rag',children:undefined});for(const item of module.children)addNode(module.id,item)}for(const item of ontologyChildren)addNode(ontologyRoot.id,item)
-for(const node of nodes){const detail=ontologyDetails[node.id];if(detail){node.tags=[...new Set([...node.tags,...detail.tags])];node.sections=detail.sections}}
+for(const module of modules){nodes.push({...module,parentId:'rag',children:undefined});for(const item of module.children)addNode(module.id,item)}for(const item of ontologyChildren)addNode(ontologyRoot.id,item);for(const item of harnessChildren)addNode(harnessRoot.id,item);
+for(const node of nodes){const detail=ontologyDetails[node.id]||harnessDetails[node.id];if(detail){node.tags=[...new Set([...node.tags,...detail.tags])];node.sections=detail.sections}}
 const byId=new Map(nodes.map(node=>[node.id,node]));const children=new Map(nodes.map(node=>[node.id,[]]));nodes.forEach(node=>{if(node.parentId)children.get(node.parentId)?.push(node.id)});
 const rootIds=nodes.filter(node=>!node.parentId).map(node=>node.id);
 const related={
@@ -220,6 +295,7 @@ function renderAll(){renderTree();renderGraph();renderInspector()}
 const themeToggle=document.querySelector('#theme-toggle');const applyTheme=theme=>{document.documentElement.dataset.theme=theme;themeToggle.textContent=theme==='dark'?'浅色':'深色';themeToggle.setAttribute('aria-label',theme==='dark'?'切换为浅色主题':'切换为深色主题');try{localStorage.setItem('rag-theme',theme)}catch{}}
 let savedTheme='light';try{savedTheme=localStorage.getItem('rag-theme')||'light'}catch{}applyTheme(savedTheme);themeToggle.addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
 document.querySelector('#search-input').addEventListener('input',event=>{state.query=event.target.value.trim();renderAll()});document.querySelector('#type-filter').addEventListener('change',event=>{state.filter=event.target.value;renderAll()});document.querySelector('#expand-neighbors').addEventListener('click',()=>{state.neighborDepth=state.neighborDepth===1?2:1;renderGraph()});document.querySelector('#reset-view').addEventListener('click',()=>{state.selectedId='rag';state.expandedIds=new Set(['rag']);state.query='';state.filter='all';state.neighborDepth=1;document.querySelector('#search-input').value='';document.querySelector('#type-filter').value='all';renderAll()});document.querySelector('#zoom-in').addEventListener('click',()=>{state.zoom=Math.min(1.35,state.zoom+.1);renderGraph()});document.querySelector('#zoom-out').addEventListener('click',()=>{state.zoom=Math.max(.75,state.zoom-.1);renderGraph()});
+document.querySelector('.brand p').textContent='局部关系探索 · '+nodes.length+' 个概念节点';
 renderAll();
 </script>
 </body>
