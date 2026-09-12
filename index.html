@@ -72,6 +72,7 @@ const modules=[
 ['rag-hallucination-research-mitigation','幻觉缓解架构','用知识治理、混合检索、证据门控、约束生成和生成后校验降低风险','research']
 ]]]},
 {id:'rag-concept-evaluation',title:'RAG 评估',type:'evaluation',summary:'评估检索、生成、引用、延迟、成本和知识新鲜度。',tags:['Evaluation','质量'],body:'评估数据集应覆盖无答案、版本、数字、多实体、冲突来源、越权、多轮和长文档问题。',children:[['rag-evaluation-dataset','评估数据集','由真实问题、参考证据、参考答案和难例组成可重复测试集'],['rag-evaluation-metrics','检索与生成指标','检索关注 Recall@K、Precision、MRR，生成关注忠实度和引用正确性'],['rag-evaluation-online-monitoring','线上监控闭环','记录召回、答案、引用、延迟、成本和反馈，把失败样本回流回归集']]}
+,{id:'rag-concept-graphrag',title:'GraphRAG（图谱增强检索）',type:'module',summary:'把文档抽取成实体-关系知识图谱，用图结构和社区摘要增强检索与全局问答。',tags:['GraphRAG','知识图谱'],body:'离线抽取实体与关系、构建图谱、按社区聚类并生成社区摘要；在线结合局部子图遍历、全局社区摘要和向量检索回答问题。',children:[['rag-graphrag-extraction','实体与关系抽取','用 LLM 或模型从文本抽取实体、关系和属性，是图谱化的第一步。'],['rag-graphrag-construction','知识图谱构建（图谱化）','对齐消歧实体、归并关系并写入图数据库，形成可查询的知识图谱。'],['rag-graphrag-community','社区检测与摘要','用 Leiden 或 Louvain 聚类出社区，再为每个社区生成摘要支撑全局问答。'],['rag-graphrag-query','图查询与遍历','用 Cypher 等做多跳遍历、邻居扩展和路径查询获取结构化证据。'],['rag-graphrag-hybrid','图向量混合检索','用向量召回定位入口实体，再沿关系遍历补充结构化上下文。'],['rag-graphrag-mcp','MCP 图查询接口','通过 MCP Server 把图数据库查询暴露给 Agent，统一权限和工具调用。'],['rag-graphrag-query-optimization','查询优化与路由','按问题类型在局部、全局和向量路径间路由，控制遍历深度、扇出和成本。']]}
 ];
 const ontologyRoot={id:'palantir-ontology',title:'Palantir Ontology（帕兰提尔本体论）',type:'root',parentId:null,summary:'把真实世界对象、关系、属性和业务动作组织成可操作的语义层。',tags:['Palantir','Ontology','语义层'],body:'Ontology 连接数据资产、业务语义、权限和可执行动作，使分析结果能够进入运营工作流。'};
 const ontologyChildren=[
@@ -187,6 +188,8 @@ const harnessChildren=[
   ['harness-ui','交互式 UI 驱动','browser 通过可访问性快照和操作驱动真实浏览器并留证。'],
   ['harness-external','外部信息','web_search 与 MCP 资源，出站需脱敏并记入外部送信日志。'],
   ['harness-process','过程管理','todo 是 Agent 内部记忆，不进入状态真相源。'],
+  ['harness-memory','记忆管理','三层记忆：短期上下文、可寻址持久记忆、todo 内部非真相源。'],
+  ['harness-context','上下文缓存与节流','行切片、结构摘要、输出溢出到 artifact 和委派，避免整文件入窗口。'],
   ['harness-patterns','横切设计模式','意图字段、URI 寻址、两段提交、乐观锁、超时和白名单等共性模式。','research']
 ];
 const harnessDetails={
@@ -243,6 +246,18 @@ const harnessDetails={
     {label:'核心要素',text:'纯 Agent 内部记忆，明确不进入状态真相源。'},
     {label:'典型例子',text:'中间计划和自省不写数据库，只有结构化结果、manifest、审批和事件才是真相。'},
     {label:'落地提示',text:'守住原语边界，避免用内部记忆污染审计与恢复。'}
+  ]},
+  'harness-memory':{tags:['记忆','短期','持久','artifact','history','todo'],sections:[
+    {label:'定义',text:'把记忆分成短期上下文、可寻址持久记忆和不进真相源的内部记忆三层。'},
+    {label:'核心要素',text:'短期是对话窗口；持久用 artifact:// 溢出产物、history:// 会话记录、local:// 共享内容按 id 引用；内部记忆是 todo，不进状态真相源。'},
+    {label:'典型例子',text:'子 Agent 空白起手，靠自包含指令和共享 context 传契约，大 payload 走 local:// 而非内联。'},
+    {label:'落地提示',text:'判断每条信息进哪层：正在用进短期，以后可能查落持久可寻址，只是过程计划留内部记忆。'}
+  ]},
+  'harness-context':{tags:['上下文','节流','行切片','artifact','委派'],sections:[
+    {label:'定义',text:'只把必要片段读进上下文窗口，大产物截断外置为可寻址引用，再用委派进一步压缩。'},
+    {label:'核心要素',text:'read 用 offset/limit 和行选择器，源码结构摘要优先；大输出截断为 artifact:// 分页取回；大块内容走 ctx_store 或 aegis-offload。'},
+    {label:'典型例子',text:'用只读 scout 或轻量子 Agent 做研究和小改动，返回更小的 tool-result，主线程不必翻大量文件。'},
+    {label:'落地提示',text:'默认假设读进来都花 token，先问能否用行范围、结构摘要或 id 引用替代整块内容。'}
   ]},
   'harness-patterns':{tags:['意图字段','URI 寻址','两段提交','乐观锁','白名单','超时'],sections:[
     {label:'定义',text:'贯穿所有工具的横切设计模式，可直接映射到流水线契约。'},
