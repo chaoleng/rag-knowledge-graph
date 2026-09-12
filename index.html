@@ -194,7 +194,11 @@ const harnessChildren=[
   ['harness-process','过程管理','todo 是 Agent 内部记忆，不进入状态真相源。'],
   ['harness-memory','记忆管理','三层记忆：短期上下文、可寻址持久记忆、todo 内部非真相源。'],
   ['harness-context','上下文缓存与节流','行切片、结构摘要、输出溢出到 artifact 和委派，避免整文件入窗口。'],
-  ['harness-patterns','横切设计模式','意图字段、URI 寻址、两段提交、乐观锁、超时和白名单等共性模式。','research']
+  ['harness-patterns','横切设计模式','意图字段、URI 寻址、两段提交、乐观锁、超时和白名单等共性模式。','research'],
+  ['harness-augmented-llm','增强型 LLM（Augmented LLM）','agentic 系统的基础积木：LLM 叠加检索、工具与记忆三类增强，自主生成查询、选择工具、决定保留哪些信息。'],
+  ['harness-aci','ACI 设计（Agent-Computer Interface）','像投入做 HCI 一样设计 agent 与计算机的接口：工具文档、示例、边界与防呆决定模型能否用对工具。'],
+  ['harness-agent-loop','Agent 循环与环境反馈','Agent 在循环里依据环境 ground truth 调用工具，需停止条件、人类检查点并防范错误累积。'],
+  ['harness-workflow-vs-agent','工作流 vs 自主 Agent','区分预定义路径的工作流与模型自驱的 agent，掌握五种编排模式并遵循简单优先。']
 ];
 const harnessDetails={
   'harness-overview':{tags:['原语','Skill','分层','边界'],sections:[
@@ -268,7 +272,11 @@ const harnessDetails={
     {label:'核心要素',text:'结构化意图字段、内部 URI 寻址、两段式提案提交、乐观锁指纹、输出溢出到 artifact、后台加超时、专用工具优先、能力白名单即上下文。'},
     {label:'典型例子',text:'大产物一律 URI 化，不进对话或状态，只留 hash 和摘要。'},
     {label:'落地提示',text:'用这八条模式收敛 ToolResult、CommandSpec、evidence_uri 和 allowed_tools 的设计。'}
-  ]}
+  ]},
+  'harness-augmented-llm':{tags:['Augmented LLM','检索','工具','记忆','基础积木'],sections:[{label:'定义',text:'agentic 系统的基本构建块是一个被增强的 LLM——叠加检索、工具调用和记忆，模型能自己生成检索查询、选择合适工具、决定保留哪些信息。'},{label:'核心要素',text:'三类增强（检索、工具、记忆）；为每类能力提供清晰且文档完善的接口；按具体用例裁剪能力而不是堆砌功能。'},{label:'典型例子',text:'一次 LLM 调用即可检索知识库、调用工具并读写记忆，后续调用都默认具备这些增强能力。'},{label:'落地提示',text:'先把接口对模型讲清楚（相当于给模型的 API 文档）再谈编排；MCP 是接入第三方工具生态的一种标准方式。'}]},
+  'harness-aci':{tags:['ACI','工具文档','poka-yoke','防呆','接口设计'],sections:[{label:'定义',text:'ACI 是模型与工具之间的接口；应像投入人机接口 HCI 一样投入设计它，因为工具用得好不好直接决定 agent 成败。'},{label:'核心要素',text:'工具定义要含示例用法、边界条件和输入格式；参数命名清晰如给初级开发者写 docstring；给模型足够 token 先思考；格式贴近自然文本，避免转义和行数计数等开销。'},{label:'典型例子',text:'把相对路径参数改成强制绝对路径（poka-yoke 防呆），模型出错率显著下降；做 SWE-bench 时优化工具花的时间比优化 prompt 还多。'},{label:'落地提示',text:'站在模型视角自问光看描述和参数用法是否显而易见；用真实输入反复运行，观察模型犯的错并迭代工具定义。'}]},
+  'harness-agent-loop':{tags:['Agent 循环','ground truth','停止条件','人类检查点','错误累积'],sections:[{label:'定义',text:'Agent 本质是 LLM 在循环里依据环境反馈调用工具；从用户命令或交互开始，任务明确后自主规划与执行。'},{label:'核心要素',text:'每一步从环境（工具结果、代码执行）获取 ground truth 评估进度；设停止条件如最大迭代数保持可控；在检查点或遇阻时暂停等待人类反馈。'},{label:'典型例子',text:'编码 Agent 用测试结果作反馈迭代解法；computer use 里模型依据屏幕状态逐步操作。'},{label:'落地提示',text:'自治带来更高成本和错误累积风险，务必在沙箱环境充分测试并加护栏；工具集与文档要清晰，因为循环会放大任何接口缺陷。'}]},
+  'harness-workflow-vs-agent':{tags:['工作流','自主 Agent','编排模式','简单优先'],sections:[{label:'定义',text:'agentic 系统分两类：workflow 通过预定义代码路径编排 LLM 与工具，agent 由 LLM 自主决定流程与工具使用。'},{label:'核心要素',text:'五种常见工作流：prompt chaining 串行分步、routing 分类路由、parallelization 并行（分段 sectioning 与投票 voting）、orchestrator-workers 中心编排加动态委派、evaluator-optimizer 生成评估循环。'},{label:'典型例子',text:'多文件代码修改适合 orchestrator-workers；内容审查护栏适合 sectioning；文学翻译适合 evaluator-optimizer。'},{label:'落地提示',text:'先用最简方案，仅当明显更优才加复杂度；workflow 给可预测任务更好的一致性，agent 适合步数不可预测、需模型自驱的开放任务。'}]}
 };
  
 const nodes=[{id:'rag',title:'RAG：检索增强生成',type:'root',parentId:null,summary:'外部知识检索增强大语言模型生成的完整系统方法。',tags:['RAG','根节点'],body:'RAG 由知识加工、检索、上下文编排、生成和评估组成。'},ontologyRoot,harnessRoot];
